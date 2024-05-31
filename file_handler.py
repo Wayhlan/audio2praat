@@ -123,13 +123,26 @@ def save_output_files(dest_folder, tag, whisper_transcription, textgrid_val, ful
     text_path = dest_folder + tag + "_plain_text.txt"
 
     saved_files = []
-    with open(transcript_path, "w", encoding="utf-8") as f:
-        json.dump(whisper_transcription, f, indent=2, ensure_ascii=False)
-        saved_files.append(transcript_path)
-    with open(text_path, "w", encoding="utf-8") as f:
-        f.write(full_text)
-        saved_files.append(text_path)
+    try:
+        with open(transcript_path, "w", encoding="utf-8") as f:
+            json.dump(whisper_transcription, f, indent=2, ensure_ascii=False)
+            saved_files.append(transcript_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{transcript_path}' : {e}")
 
+    try:
+        if full_text:
+            with open(text_path, "w", encoding="utf-8") as f:
+                f.write(full_text)
+                saved_files.append(text_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{text_path}' : {e}")
 
-    textgrid_val.save(grid_path, format="short_textgrid", includeBlankSpaces=True)
-    saved_files.append(grid_path)
+    try:
+        if textgrid_val:
+            textgrid_val.save(grid_path, format="short_textgrid", includeBlankSpaces=True)
+            saved_files.append(grid_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{grid_path}' : {e}")
+
+    return saved_files

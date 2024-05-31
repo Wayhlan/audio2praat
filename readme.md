@@ -1,7 +1,9 @@
 ## Install :
-```bash 
+Requires Python 3.10 and up.
+For Nvidia Boards : https://developer.nvidia.com/cuda-downloads
+
+```bash
 !pip install whisper-timestamped
-!pip install matplotlib
 !pip install praatio
 !pip install auditok
 !pip install transformers
