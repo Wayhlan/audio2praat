@@ -1,5 +1,5 @@
 ## Install :
-'''bash 
+```bash 
 !pip install whisper-timestamped
 !pip install matplotlib
 !pip install praatio
@@ -7,10 +7,10 @@
 !pip install transformers
 !pip install torch
 !pip install pydub
-'''
+```
 
 
 ## Update : 
-'''bash
+```bash
 pip3 install --upgrade --no-deps --force-reinstall git+https://github.com/linto-ai/whisper-timestamped
-'''
+```
