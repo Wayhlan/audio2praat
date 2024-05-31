@@ -21,7 +21,7 @@ def transcribe_segment(segment, model_string, vad, detect_disfluencies, language
 def transcribe_from_file(file_path, output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     start_time = np.int32(time.time())
-    segments = audio_handler.split_audio(file_path, segment_length_s)
+    segments, lengths = audio_handler.split_audio(file_path, segment_length_s)
 
     transcription_segments = []
     for segment in segments:
@@ -29,7 +29,7 @@ def transcribe_from_file(file_path, output_folder="", model_string="large", vad=
         transcription_segments.append(transcribe_segment(audio, model_string, vad, detect_disfluencies, language))
 
     combined_results = {
-        "segments": file_handler.adjust_segments(transcription_segments, segment_length_s)
+        "segments": file_handler.adjust_segments(transcription_segments, lengths)
     }
 
     textgrid_val, full_text = None, None
@@ -67,27 +67,3 @@ if __name__ == "__main__":
     print(f"Starting transcription for '{file_path}' :")
     print(f"Transcribing with model : Whisper-{model}")
     files_saved = transcribe_from_file(file_path=file_path, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
-
-# def read_audio_from_file(file_path = "res/Minh_1.wav"):
-#     # help(whisper.transcribe)
-#     try:
-#         if "wav" in file_path:
-#             audio = AudioSegment.from_wav(file_path)
-#         elif "mp3" in file_path:
-#             audio = AudioSegment.from_mp3(file_path)
-#         else:
-#             print(f"Unsupported Audio format in file : {file_path}")
-#     except Exception as e:
-#         print(f"Error while reading from audio file '{file_path}' : {e}")
-#     # For conversion purposes.. : 
-#     # audio.export("res/output.mp3", format="mp3")
-#     # audio.export("res/output.wav", format="wav")
-#     return audio
-
-# with open('LARGE_nothing_format/transcription_combined_large.json', 'r', encoding="utf-8") as file:
-#     # Step 3: Load the JSON data
-#     data = json.load(file)
-# full_text = combine_sentences_from_json(data)
-
-# # Saving transcription textgrid
-# json_to_textgrid(data, save_path=("LARGE_nothing_format/textgrid_" + model + ".TextGrid"), text=full_text)

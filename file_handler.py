@@ -88,16 +88,16 @@ def json_to_textgrid(transcription_result, target_words = VIET_TARGET_WORDS, tar
     return tg, text
 
 
-def adjust_segments(transcription_segments, segment_length_s):
+def adjust_segments(transcription_segments, lengths):
     combined_segments = []
     for i, segment in enumerate(transcription_segments):
         for sub_segment in segment["segments"]:
             sub_segment["id"] = f"{i}_{sub_segment['id']}"
-            sub_segment["start"] += i * segment_length_s
-            sub_segment["end"] += i * segment_length_s
+            sub_segment["start"] += i * lengths[i-1]
+            sub_segment["end"] += i * lengths[i-1]
             for word in sub_segment['words']:
-                word["start"] += i * segment_length_s
-                word["end"] += i * segment_length_s
+                word["start"] += i * lengths[i-1]
+                word["end"] += i * lengths[i-1]
             combined_segments.append(sub_segment)
     return combined_segments
 

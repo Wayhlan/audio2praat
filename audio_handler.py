@@ -1,5 +1,6 @@
 import os
 from pydub import AudioSegment
+import numpy
 
 def split_audio(file_path, segment_length_s):
     try:
@@ -13,6 +14,7 @@ def split_audio(file_path, segment_length_s):
             os.makedirs("res/tmp")
 
         segments = []
+        lengths = []
         i = 0
         for start in range(0, total_length, segment_length):
             end = min(start + segment_length, total_length)
@@ -21,9 +23,11 @@ def split_audio(file_path, segment_length_s):
             segment_filename = os.path.join("res/tmp", f"segment_{i}.wav")
             segment.export(segment_filename, format="wav")
             segments.append(segment_filename)
+            lengths.append(numpy.int32(len(segment)/1000))
             i = i + 1
+        lengths.append(0)
         
-        return segments
+        return segments, lengths
     except Exception as e:
         print(f"Error while spliting audio : {e}")
         return None
