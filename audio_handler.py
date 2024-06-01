@@ -134,7 +134,7 @@ def split_audio(file_path, segment_length_s, possible_cuts):
         segment_length = segment_length_s * 1000
         total_length = len(audio)
 
-        print(f"Audio lenght : {total_length/1000.0}")
+        print(f"Audio lenght : {total_length/1000.0}s")
 
         if not os.path.exists("res/tmp"):
             os.makedirs("res/tmp")
@@ -156,7 +156,7 @@ def split_audio(file_path, segment_length_s, possible_cuts):
             lengths.append(len(segment)/1000.0)
             i = i + 1
         lengths.append(0)
-        
+        print("\n")
         return segments, lengths
     except Exception as e:
         print(f"Error while spliting audio : {e}")
