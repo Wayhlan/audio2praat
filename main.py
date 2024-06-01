@@ -48,14 +48,14 @@ def transcribe_from_file(file_path, output_folder="", model_string="large", vad=
 
 if __name__ == "__main__":
     # Choose from ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3"]
-    model = "tiny"
+    model = "large"
     # vad Voice Activity Detection -> to glue up useful audio segments
     vad = False
     # detect_disfluencies -> to try and detect non-word voice activity
     detect_disfluencies = False
     language="vietnamese"
-    output_folder = "output/testing"
-    file_path = "res/Minh_1.wav"
+    output_folder = "output/testing_no_ampl"
+    file_path = "res/Minh_1.wav" # "res/tmp/amplified_audio.wav" #
     segment_length_s=80
 
     try:
@@ -63,6 +63,11 @@ if __name__ == "__main__":
     except Exception as e:
         print("Failed to clear GPU cache, should not be an issue")
 
+    # start_time = np.int32(time.time())
+    # amplified_audio_path, possible_cuts_s = audio_handler.amplify_audio_below_mean(file_path)
+    # end_time = np.int32(time.time())
+    # execution_time_s = (end_time - start_time)
+    # print(f"Preprocessing time : {execution_time_s}s")
 
     print(f"Starting transcription for '{file_path}' :")
     print(f"Transcribing with model : Whisper-{model}")
