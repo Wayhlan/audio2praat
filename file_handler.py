@@ -21,18 +21,26 @@ def json_to_textgrid(transcription_result, target_words = VIET_TARGET_WORDS, tar
     composed_targets_counters = np.zeros(nb_targets).astype(np.int32)
     print("\n")
 
+    prev_end = 0.0
     for segment in transcription_result['segments']:
-        sentence_start = segment['start']
+        sentence_start = max(segment['start'], prev_end)
         sentence_end = segment['end']
         sentence_text = segment['text']
-        sentences.append((sentence_start, sentence_end, sentence_text))
+        if sentence_start < sentence_end:
+            sentences.append((sentence_start, sentence_end, sentence_text))
+            prev_end = sentence_end
+        else:
+            print(f"Skipping a sentence at {sentence_start}")
+        
 
         nb_words = len(segment['words'])
+        prev_w_end = 0.0
         for idx in range(nb_words):
             word_start = segment['words'][idx]['start']
             word_end = segment['words'][idx]['end']
             word_text = segment['words'][idx]['text']
-            words.append((word_start, word_end, word_text))
+            words.append((max(word_start, prev_w_end), word_end, word_text))
+            prev_w_end = word_end
 
             for id_target in range(nb_targets):
                 if target_words[id_target].lower() == utils.remove_punctuation(word_text.lower()):
@@ -67,21 +75,21 @@ def json_to_textgrid(transcription_result, target_words = VIET_TARGET_WORDS, tar
     try:
         t_word_tier = textgrid.IntervalTier('n°', t_words, 0, end_time)
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'n°', leaving empty.")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'n°', leaving empty. {e}")
         t_word_tier = textgrid.IntervalTier('n°', [], 0, end_time)
     tg.addTier(t_word_tier)
 
     try:
         sentence_tier = textgrid.IntervalTier('phrases', sentences, 0, end_time)
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'phrases', leaving empty.")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'phrases', leaving empty. {e}")
         sentence_tier = textgrid.IntervalTier('phrases', [], 0, end_time)
     tg.addTier(sentence_tier)
 
     try:
         discours_tier = textgrid.IntervalTier('discours', [(0, end_time, text)], 0, end_time)
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'discours', leaving empty.")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'discours', leaving empty. {e}")
         discours_tier = textgrid.IntervalTier('discours', [], 0, end_time)
     tg.addTier(discours_tier)
 
@@ -90,14 +98,16 @@ def json_to_textgrid(transcription_result, target_words = VIET_TARGET_WORDS, tar
 
 def adjust_segments(transcription_segments, lengths):
     combined_segments = []
+    added_time = 0
     for i, segment in enumerate(transcription_segments):
+        added_time += lengths[i-1]
         for sub_segment in segment["segments"]:
             sub_segment["id"] = f"{i}_{sub_segment['id']}"
-            sub_segment["start"] += i * lengths[i-1]
-            sub_segment["end"] += i * lengths[i-1]
+            sub_segment["start"] += added_time
+            sub_segment["end"] += added_time
             for word in sub_segment['words']:
-                word["start"] += i * lengths[i-1]
-                word["end"] += i * lengths[i-1]
+                word["start"] += added_time
+                word["end"] += added_time
             combined_segments.append(sub_segment)
     return combined_segments
 

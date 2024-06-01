@@ -2,26 +2,9 @@ import os
 from pydub import AudioSegment
 import numpy as np
 import matplotlib.pyplot as plt
+import inspect
 
 import utils
-
-# def filter_values(input_array):
-#     filtered_array = input_array.copy()
-#     n = len(input_array)
-    
-#     for i in range(n):
-#         window_start = max(0, i - 6)
-#         window_end = min(n, i + 7)
-#         window = input_array[window_start:window_end]
-        
-#         unique, counts = np.unique(window, return_counts=True)
-#         frequency_dict = dict(zip(unique, counts))
-        
-#         if frequency_dict[input_array[i]] < 3:
-#             most_frequent_value = max(frequency_dict, key=frequency_dict.get)
-#             filtered_array[i] = most_frequent_value
-            
-#     return filtered_array
 
 def extend_spoken_segment(array, extend_ticks, extended_tag, shortened_tag, null_tag):
     n = len(array)
@@ -51,7 +34,7 @@ def get_middle_points(tags, step_size_ms):
             end = i - 1
             if (end - start) > min_length:
                 middle = (start + end) // 2
-                middle_points.append(middle * step_size_ms / 1000.0)
+                middle_points.append(middle * step_size_ms)
         i += 1
 
     return middle_points
@@ -65,13 +48,11 @@ def amplify_audio_below_mean(file_path, amplification_dB=16):
 
     segment_tag = []
     amplitudes = []
-    # time_stamps = []
     for start_ms in range(0, len(audio), step_size_ms):
         end_ms = start_ms + window_size_ms
         segment = audio[start_ms:end_ms]
         amp = utils.mean_amplitude(segment)
         amplitudes.append(amp)
-        # time_stamps.append(start_ms / 1000.0)
 
         if amp < 100:
             segment_tag.append(0)
@@ -92,7 +73,6 @@ def amplify_audio_below_mean(file_path, amplification_dB=16):
             amplified_segment = segment + amplification_dB
             amplified_audio = amplified_audio[:start_ms] + amplified_segment + amplified_audio[end_ms:]
 
-    # Save the modified audio to disk
     output_file_path = "res/tmp/amplified_audio.wav"
     amplified_audio.export(output_file_path, format="wav")
     print(f"Saving amplified audio at : {output_file_path}")
@@ -111,7 +91,7 @@ def amplify_audio_below_mean(file_path, amplification_dB=16):
     plt.plot(time_axis[::16], ampl_samples[::16], label='Amplified Audio', alpha=0.5, color='g')
     
     for point in middle_points:
-        plt.axvline(x=point, color='r', linestyle='--', label='Possible Cuts' if point == middle_points[0] else "")
+        plt.axvline(x=point/1000.0, color='r', linestyle='--', label='Possible Cuts' if point == middle_points[0] else "")
         
     plt.title('Original and Amplified Audio')
     plt.xlabel('Time (s)')
@@ -126,13 +106,35 @@ def amplify_audio_below_mean(file_path, amplification_dB=16):
     return output_file_path, middle_points
 
 
-def split_audio(file_path, segment_length_s):
+def find_possible_cuts(file_path):
+    window_size_ms = 200
+    step_size_ms = 100
+    try:
+        audio = AudioSegment.from_file(file_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Error loading file {file_path} : {e}")
+        exit()
+
+    segment_tag = []
+    for start_ms in range(0, len(audio), step_size_ms):
+        end_ms = start_ms + window_size_ms
+        segment = audio[start_ms:end_ms]
+        amp = utils.mean_amplitude(segment)
+
+        if amp < 100:
+            segment_tag.append(0)
+        else:
+            segment_tag.append(1000)
+
+    return get_middle_points(segment_tag, step_size_ms)
+
+def split_audio(file_path, segment_length_s, possible_cuts):
     try:
         audio = AudioSegment.from_file(file_path)
         segment_length = segment_length_s * 1000
         total_length = len(audio)
 
-        print(f"Audio lenght : {total_length}")
+        print(f"Audio lenght : {total_length/1000.0}")
 
         if not os.path.exists("res/tmp"):
             os.makedirs("res/tmp")
@@ -140,14 +142,18 @@ def split_audio(file_path, segment_length_s):
         segments = []
         lengths = []
         i = 0
-        for start in range(0, total_length, segment_length):
+        start = 0
+        while start < total_length:
             end = min(start + segment_length, total_length)
-            print(f"Spliting at  : {start}|{end}")
+            if end != total_length:
+                end = min(possible_cuts, key=lambda x: abs(x - float(end)))
+            print(f"Spliting at  : {start/1000.0}|{end/1000.0}")
             segment = audio[start:end]
+            start = end
             segment_filename = os.path.join("res/tmp", f"segment_{i}.wav")
             segment.export(segment_filename, format="wav")
             segments.append(segment_filename)
-            lengths.append(np.int32(len(segment)/1000))
+            lengths.append(len(segment)/1000.0)
             i = i + 1
         lengths.append(0)
         

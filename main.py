@@ -11,6 +11,7 @@ import inspect
 import audio_handler
 import file_handler
 
+import json
 
 def transcribe_segment(segment, model_string, vad, detect_disfluencies, language):
     devices = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -18,10 +19,10 @@ def transcribe_segment(segment, model_string, vad, detect_disfluencies, language
     result = whisper.transcribe(model, segment, vad=vad, detect_disfluencies=detect_disfluencies, language=language)
     return result
 
-def transcribe_from_file(file_path, output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
+def transcribe_from_file(file_path, possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     start_time = np.int32(time.time())
-    segments, lengths = audio_handler.split_audio(file_path, segment_length_s)
+    segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
     transcription_segments = []
     for segment in segments:
@@ -54,8 +55,8 @@ if __name__ == "__main__":
     # detect_disfluencies -> to try and detect non-word voice activity
     detect_disfluencies = False
     language="vietnamese"
-    output_folder = "output/testing_no_ampl"
-    file_path = "res/Minh_1.wav" # "res/tmp/amplified_audio.wav" #
+    output_folder = "output/tes_0"
+    file_path = "res/Minh_1.wav"
     segment_length_s=80
 
     try:
@@ -63,12 +64,23 @@ if __name__ == "__main__":
     except Exception as e:
         print("Failed to clear GPU cache, should not be an issue")
 
+    # if torch.cuda.is_available() :
+    #     torch.cuda.set_per_process_memory_fraction(0.90)
+
     # start_time = np.int32(time.time())
-    # amplified_audio_path, possible_cuts_s = audio_handler.amplify_audio_below_mean(file_path)
+    # amplified_audio_path, possible_cuts = audio_handler.amplify_audio_below_mean(file_path)
     # end_time = np.int32(time.time())
     # execution_time_s = (end_time - start_time)
     # print(f"Preprocessing time : {execution_time_s}s")
 
     print(f"Starting transcription for '{file_path}' :")
     print(f"Transcribing with model : Whisper-{model}")
-    files_saved = transcribe_from_file(file_path=file_path, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
+    possible_cuts = audio_handler.find_possible_cuts(file_path)
+    files_saved = transcribe_from_file(file_path=file_path, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
+
+
+    # with open("output/testing_no_ampl/small_whisper_transcription.json", 'r', encoding='utf-8') as f:
+    #     # Load the data from the file
+    #     data = json.load(f)
+    # tg, t = file_handler.json_to_textgrid(data)
+    # tg.save("output/testing_no_ampl/small___.TextGrid", format="short_textgrid", includeBlankSpaces=True)
