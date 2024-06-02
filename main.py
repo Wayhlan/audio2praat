@@ -12,10 +12,11 @@ import audio_handler
 import file_handler
 
 import json
+import shutil
 
 def transcribe_segment(segment, model_string, vad, detect_disfluencies, language):
     devices = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = whisper.load_model(model_string, device=devices)
+    model = whisper.load_model("models/large-v3.pt", device=devices)
     result = whisper.transcribe(model, segment, vad=vad, detect_disfluencies=detect_disfluencies, language=language)
     return result
 
@@ -23,6 +24,7 @@ def transcribe_from_file(file_path, possible_cuts=[], output_folder="", model_st
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
+    print("Whisper starting...")
     transcription_segments = []
     for segment in segments:
         audio = whisper.load_audio(segment)
@@ -68,7 +70,7 @@ if __name__ == "__main__":
     # execution_time_s = (end_time - start_time)
     # print(f"Preprocessing time : {execution_time_s}s")
 
-    print("Current settings :")
+    print("\nCurrent settings :")
     print(f"[1] Voice Activity Detection (VAD) : {vad}")
     print(f"[2] Disfluencies detection : {detect_disfluencies}")
     print(f"[3] Selected language : {language}")
@@ -97,6 +99,7 @@ if __name__ == "__main__":
 
     print("\n###########################################")
     print(f"Starting transcription for '{file_path}' :")
+    print("\n###########################################")
     print("Settings : ")
     print(f"Voice Activity Detection (VAD) : {vad}")
     print(f"Disfluencies detection : {detect_disfluencies}")
@@ -106,8 +109,9 @@ if __name__ == "__main__":
     print("###########################################")
     print(f"Transcribing with model : Whisper-{model}")
     if not torch.cuda.is_available():
-        print("Transcribing using CPU... This might take a while.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n\n")
+        print("Transcribing using CPU... This might take a while.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
     start_time = np.int32(time.time())
+    print("Pre-processing...")
     possible_cuts = audio_handler.find_possible_cuts(file_path)
     files_saved = transcribe_from_file(file_path=file_path, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
 

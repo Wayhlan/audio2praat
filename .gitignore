@@ -1,3 +1,5 @@
 res/
 output/
 __pycache__
+build/
+dist/

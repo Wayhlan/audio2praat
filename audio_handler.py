@@ -113,7 +113,7 @@ def find_possible_cuts(file_path):
         audio = AudioSegment.from_file(file_path)
     except Exception as e:
         print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Error loading file {file_path} : {e}")
-        exit()
+        return []
 
     segment_tag = []
     for start_ms in range(0, len(audio), step_size_ms):
@@ -147,7 +147,7 @@ def split_audio(file_path, segment_length_s, possible_cuts):
             end = min(start + segment_length, total_length)
             if end != total_length:
                 end = min(possible_cuts, key=lambda x: abs(x - float(end)))
-            print(f"Spliting at  : {start/1000.0}|{end/1000.0}")
+            print(f"Segment {i}  : {start/1000.0}|{end/1000.0}")
             segment = audio[start:end]
             start = end
             segment_filename = os.path.join("res/tmp", f"segment_{i}.wav")
@@ -156,7 +156,7 @@ def split_audio(file_path, segment_length_s, possible_cuts):
             lengths.append(len(segment)/1000.0)
             i = i + 1
         lengths.append(0)
-        print("\n")
+
         return segments, lengths
     except Exception as e:
         print(f"Error while spliting audio : {e}")

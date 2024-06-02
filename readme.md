@@ -20,3 +20,7 @@ For Nvidia Boards : https://developer.nvidia.com/cuda-downloads
 ```bash
 pip3 install --upgrade --no-deps --force-reinstall git+https://github.com/linto-ai/whisper-timestamped
 ```
+
+
+## Build
+pyinstaller main.py --name audio2praat --add-data 'libs/ffmpeg/bin/ffmpeg.exe;libs/ffmpeg/bin' --add-data 'C:/Users/virgi/.cache/whisper/large-v3.pt;models' --add-data 'C:/Users/virgi/AppData/Local/Programs/Python/Python312/Lib/site-packages/whisper/assets;whisper/assets'
