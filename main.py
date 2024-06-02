@@ -20,7 +20,7 @@ def transcribe_segment(segment, model_string, vad, detect_disfluencies, language
     result = whisper.transcribe(model, segment, vad=vad, detect_disfluencies=detect_disfluencies, language=language)
     return result
 
-def transcribe_from_file(file_path, possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
+def transcribe_from_file(file_path, t_words_path, t_composed_path, possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
@@ -36,7 +36,7 @@ def transcribe_from_file(file_path, possible_cuts=[], output_folder="", model_st
 
     textgrid_val, full_text = None, None
     try:
-        textgrid_val, full_text = file_handler.json_to_textgrid(combined_results)
+        textgrid_val, full_text = file_handler.json_to_textgrid(combined_results, target_words_path=t_words_path, target_composed_path=t_composed_path)
     except Exception as e:
         print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Error while creating textgrid : {e}")
 
@@ -55,6 +55,8 @@ if __name__ == "__main__":
     output_folder = "output/tes_0"
     file_path = "res/Minh_1.wav"
     segment_length_s=80
+    words_path = "res/target_words.txt"
+    composed_path = "res/target_composed.txt"
 
     try:
         torch.cuda.empty_cache()
@@ -76,6 +78,8 @@ if __name__ == "__main__":
     print(f"[3] Selected language : {language}")
     print(f"[4] Audio file path : {file_path}")
     print(f"[5] Audio segment length : {segment_length_s}s")
+    print(f"[6] Target words file path : {words_path}s")
+    print(f"[7] Target composed words file path : {composed_path}s")
     user_command = input("Enter setting number to change (Just press Enter to skip):")
     while user_command != "":
         try:
@@ -92,6 +96,10 @@ if __name__ == "__main__":
                 file_path = input("File path = ")
             if value == 5:
                 segment_length_s = int(input("Segment length (seconds) = "))
+            if value == 6:
+                words_path = input("Target words file path = ")
+            if value == 7:
+                composed_path = input("Target composed words file path = ")
             user_command = input("Anything else ? (Just press Enter to skip):")
         except Exception as e:
             print("User input not usable...")
@@ -106,6 +114,8 @@ if __name__ == "__main__":
     print(f"Selected language : {language}")
     print(f"Audio file path : {file_path}")
     print(f"Audio segment length : {segment_length_s} s")
+    print(f"Target words file path : {words_path}s")
+    print(f"Target composed words file path : {composed_path}s")
     print("###########################################")
     print(f"Transcribing with model : Whisper-{model}")
     if not torch.cuda.is_available():
@@ -113,7 +123,7 @@ if __name__ == "__main__":
     start_time = np.int32(time.time())
     print("Pre-processing...")
     possible_cuts = audio_handler.find_possible_cuts(file_path)
-    files_saved = transcribe_from_file(file_path=file_path, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
+    files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_composed_path=composed_path, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
 
     end_time = np.int32(time.time())
     execution_time_min = (end_time - start_time) // 60

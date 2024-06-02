@@ -6,13 +6,21 @@ import inspect
 
 import utils
 
-VIET_TARGET_WORDS = ["pháp", "áp", "bát", "phát", "lác", "lắc", "gác", "đám", "khám", "bán", "gián", "đáng", "sáng"]
-VIET_TARGET_WORDS_PRINT = ["phap", "ap", "bat", "phat", "lac", "lac", "gac", "dam", "kham", "ban", "gian", "dang", "sang"]
-VIET_COMPOSED_TARGETS = ["pháp lý", "áp bức", "bát ngát", "phát giác", "lác đác", "lắc đắc", "gác bút", "đám cưới", "khám phá", "bán kết", "gián tiếp", "đáng kính", "sáng kiến"]
-VIET_COMPOSED_TARGETS_PRINT = ["phap ly", "ap buc", "bat ngat", "phat giac", "lac dac", "lac dac", "gac but", "dam cuoi", "kham pha", "ban ket", "gian tiep", "dang kinh", "sang kien"]
-
-def json_to_textgrid(transcription_result, target_words = VIET_TARGET_WORDS, target_composed = VIET_COMPOSED_TARGETS):
+def json_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_composed_path = "res/target_composed.txt"):
     text = combine_sentences_from_json(transcription_result)
+
+    try:
+        target_words = []
+        target_composed = []
+        with open(target_words_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                target_words.append(line.strip())
+        with open(target_composed_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                target_composed.append(line.strip())
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load target (composed) words : {e}")
+
     sentences = []
     words = []
     t_words = []
@@ -60,9 +68,9 @@ def json_to_textgrid(transcription_result, target_words = VIET_TARGET_WORDS, tar
     for idt in range(nb_targets):
         try:
             if targets_counters[idt] > 0:
-                print(f"Found x{targets_counters[idt]} : {VIET_TARGET_WORDS_PRINT[idt]}")
+                print(f"Found x{targets_counters[idt]} : {target_words[idt]}")
             if composed_targets_counters[idt] > 0:
-                print(f"Found x{composed_targets_counters[idt]} : {VIET_COMPOSED_TARGETS_PRINT[idt]}")
+                print(f"Found x{composed_targets_counters[idt]} : {target_composed[idt]}")
         except Exception as e:
             print("Failed to print found word due to encoding issues.")
 
