@@ -1,5 +1,10 @@
-## Install :
-Requires Python 3.10 and up.  
+## Requirements
+Python 3.10 and up  
+12 Go RAM minimum  
+(10 Go GPU on Nvidia cards only)  
+
+## Install :  
+Python : https://www.python.org/downloads/windows/  
 For Nvidia Boards : https://developer.nvidia.com/cuda-downloads  
 
 ```bash
