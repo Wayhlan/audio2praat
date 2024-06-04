@@ -66,8 +66,8 @@ if __name__ == "__main__":
     device = "cpu"
     if torch.cuda.is_available():
         free_mem, global_mem = torch.cuda.mem_get_info()
-        print(f"GPU Detected, available memory : {free_mem}/{global_mem}")
-        if free_mem > 8:
+        print("GPU Detected, available memory : {:2.2f}/{:2.2f} Go".format(free_mem/1000000000, global_mem/1000000000))
+        if free_mem > 8000000000:
             device = "cuda:0"
             try:
                 torch.cuda.empty_cache()
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                 composed_path = input("Target composed words file path = ")
             if value == 8:
                 if device == "cpu":
-                    print("No GPU available... Or not enough memory available on it.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
+                    print("\nNo GPU available... Or not enough memory available on it.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
                 else:
                     choice = int(input("Device to use (Enter '1' for CPU ; '2' for GPU) "))
                     if choice==1:
