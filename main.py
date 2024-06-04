@@ -8,10 +8,14 @@ import numpy as np
 import torch
 import time
 import inspect
+import gc
 import audio_handler
 import file_handler
 
+gc.enable()
+
 def transcribe_segment(segment, device_str, model_string, vad, detect_disfluencies, language):
+    gc.collect()
     devices = torch.device(device_str)
     try:
         if os.path.isfile("models/large-v3.pt"):
@@ -57,7 +61,7 @@ if __name__ == "__main__":
     model = "large"
     vad = False
     detect_disfluencies = False
-    language="vietnamese"
+    language="vi"
     output_folder = "output/tes_0"
     file_path = "res/Minh_1.wav"
     segment_length_s=80
@@ -67,7 +71,7 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         free_mem, global_mem = torch.cuda.mem_get_info()
         print("GPU Detected, available memory : {:2.2f}/{:2.2f} Go".format(free_mem/1000000000, global_mem/1000000000))
-        if free_mem > 8000000000:
+        if free_mem > 10000000000:
             device = "cuda:0"
             try:
                 torch.cuda.empty_cache()
@@ -141,7 +145,7 @@ if __name__ == "__main__":
     print("Pre-processing...")
     possible_cuts = audio_handler.find_possible_cuts(file_path)
     files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_composed_path=composed_path, device_str=device, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
-
+    gc.collect()
     end_time = np.int32(time.time())
     execution_time_min = (end_time - start_time) // 60
     execution_time_sec = (end_time - start_time) % 60

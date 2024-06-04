@@ -11,11 +11,6 @@ pip install torch
 pip install pydub
 ```
 
-## Update : 
-```bash
-pip3 install --upgrade --no-deps --force-reinstall git+https://github.com/linto-ai/whisper-timestamped
-```
-
 ## Build standalone executable :
 Change USERNAME with actual UserName and potentially adapt paths to fit your install locations.  
 ```bash
@@ -37,4 +32,12 @@ Both 'models/' and 'libs/' directories need to be moved outside of the '_interna
     ├── _internal/  
     ├── models/  
     ├── libs/  
-    └── audio2praat.exe  
+    └── audio2praat.exe 
+
+## Google collabs
+https://colab.research.google.com/drive/1dEhvDJuB7zvBvst_hJ4-mDInOvBXcOum?usp=sharing
+
+## Update if necessary : 
+```bash
+pip3 install --upgrade --no-deps --force-reinstall git+https://github.com/linto-ai/whisper-timestamped
+```
