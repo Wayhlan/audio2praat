@@ -11,16 +11,21 @@ import inspect
 import audio_handler
 import file_handler
 
-import json
-import shutil
-
-def transcribe_segment(segment, model_string, vad, detect_disfluencies, language):
-    devices = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = whisper.load_model("models/large-v3.pt", device=devices)
-    result = whisper.transcribe(model, segment, vad=vad, detect_disfluencies=detect_disfluencies, language=language)
+def transcribe_segment(segment, device_str, model_string, vad, detect_disfluencies, language):
+    devices = torch.device(device_str)
+    try:
+        if os.path.isfile("models/large-v3.pt"):
+            model = whisper.load_model("models/large-v3.pt", device=devices)
+        else:
+            print("Model not found in 'models/' folder. Trying to download/load it from cache.")
+            model = whisper.load_model("large", device=devices) # try to download it
+        result = whisper.transcribe(model, segment, vad=vad, detect_disfluencies=detect_disfluencies, language=language)
+    except Exception as e:
+        print(f"Failed to transcribe with exception : {e}")
+        return None
     return result
 
-def transcribe_from_file(file_path, t_words_path, t_composed_path, possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
+def transcribe_from_file(file_path, t_words_path, t_composed_path, device_str="cpu", possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
@@ -28,7 +33,11 @@ def transcribe_from_file(file_path, t_words_path, t_composed_path, possible_cuts
     transcription_segments = []
     for segment in segments:
         audio = whisper.load_audio(segment)
-        transcription_segments.append(transcribe_segment(audio, model_string, vad, detect_disfluencies, language))
+        transcription_pt = transcribe_segment(audio, device_str, model_string, vad, detect_disfluencies, language)
+        if transcription_pt:
+            transcription_segments.append(transcription_pt)
+        else:
+            return None
 
     combined_results = {
         "segments": file_handler.adjust_segments(transcription_segments, lengths)
@@ -45,11 +54,8 @@ def transcribe_from_file(file_path, t_words_path, t_composed_path, possible_cuts
     return textgrid_val
 
 if __name__ == "__main__":
-    # Choose from ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3"]
     model = "large"
-    # vad Voice Activity Detection -> to glue up useful audio segments
     vad = False
-    # detect_disfluencies -> to try and detect non-word voice activity
     detect_disfluencies = False
     language="vietnamese"
     output_folder = "output/tes_0"
@@ -57,14 +63,16 @@ if __name__ == "__main__":
     segment_length_s=80
     words_path = "res/target_words.txt"
     composed_path = "res/target_composed.txt"
-
-    try:
-        torch.cuda.empty_cache()
-    except Exception as e:
-        print("Failed to clear GPU cache, should not be an issue")
-
-    # if torch.cuda.is_available() :
-    #     torch.cuda.set_per_process_memory_fraction(0.90)
+    device = "cpu"
+    if torch.cuda.is_available():
+        free_mem, global_mem = torch.cuda.mem_get_info()
+        print(f"GPU Detected, available memory : {free_mem}/{global_mem}")
+        if free_mem > 8:
+            device = "cuda:0"
+            try:
+                torch.cuda.empty_cache()
+            except Exception as e:
+                print("Failed to set CUDA parameters...")
 
     # start_time = np.int32(time.time())
     # amplified_audio_path, possible_cuts = audio_handler.amplify_audio_below_mean(file_path)
@@ -80,11 +88,12 @@ if __name__ == "__main__":
     print(f"[5] Audio segment length : {segment_length_s}s")
     print(f"[6] Target words file path : {words_path}s")
     print(f"[7] Target composed words file path : {composed_path}s")
+    print(f"[8] Processing device : {device}")
     user_command = input("Enter setting number to change (Just press Enter to skip):")
     while user_command != "":
         try:
             value = int(user_command)
-            if value < 1 or value > 5:
+            if value < 1 or value > 8:
                 user_command = input("Please give an integer within range :")
             if value == 1:
                 vad = bool(input("VAD = (Enter '0' for False ; '1' for True)"))
@@ -100,7 +109,16 @@ if __name__ == "__main__":
                 words_path = input("Target words file path = ")
             if value == 7:
                 composed_path = input("Target composed words file path = ")
-            user_command = input("Anything else ? (Just press Enter to skip):")
+            if value == 8:
+                if device == "cpu":
+                    print("No GPU available... Or not enough memory available on it.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
+                else:
+                    choice = int(input("Device to use (Enter '1' for CPU ; '2' for GPU) "))
+                    if choice==1:
+                        device = "cpu"
+                    elif choice==2:
+                        device = "cuda:0"
+            user_command = input("Enter setting number to change (Just press Enter to skip):")
         except Exception as e:
             print("User input not usable...")
             exit()
@@ -116,19 +134,23 @@ if __name__ == "__main__":
     print(f"Audio segment length : {segment_length_s} s")
     print(f"Target words file path : {words_path}s")
     print(f"Target composed words file path : {composed_path}s")
+    print(f"Processing with device : {device}")
     print("###########################################")
     print(f"Transcribing with model : Whisper-{model}")
-    if not torch.cuda.is_available():
-        print("Transcribing using CPU... This might take a while.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
     start_time = np.int32(time.time())
     print("Pre-processing...")
     possible_cuts = audio_handler.find_possible_cuts(file_path)
-    files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_composed_path=composed_path, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
+    files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_composed_path=composed_path, device_str=device, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
 
     end_time = np.int32(time.time())
     execution_time_min = (end_time - start_time) // 60
     execution_time_sec = (end_time - start_time) % 60
-    print(f"Done transcribing\nTotal transcription time : {execution_time_min}m{execution_time_sec}s")
+
+    if files_saved == None:
+        print("Failed transcribing\n")
+    else:
+        print(f"Done transcribing\n")
+    print(f"Total transcription time : {execution_time_min}m{execution_time_sec}s")
 
     # with open("output/testing_no_ampl/small_whisper_transcription.json", 'r', encoding='utf-8') as f:
     #     # Load the data from the file
