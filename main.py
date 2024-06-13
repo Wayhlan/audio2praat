@@ -11,6 +11,7 @@ import inspect
 import gc
 import audio_handler
 import file_handler
+import json
 
 gc.enable()
 
@@ -29,7 +30,7 @@ def transcribe_segment(segment, device_str, model_string, vad, detect_disfluenci
         return None
     return result
 
-def transcribe_from_file(file_path, t_words_path, t_composed_path, device_str="cpu", possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
+def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed_path, device_str="cpu", possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
@@ -49,7 +50,7 @@ def transcribe_from_file(file_path, t_words_path, t_composed_path, device_str="c
 
     textgrid_val, full_text = None, None
     try:
-        textgrid_val, full_text = file_handler.json_to_textgrid(combined_results, target_words_path=t_words_path, target_composed_path=t_composed_path)
+        textgrid_val, full_text = file_handler.json_to_textgrid(combined_results, target_words_path=t_words_path, target_split_words_path=t_words_split_path, target_composed_path=t_composed_path)
     except Exception as e:
         print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Error while creating textgrid : {e}")
 
@@ -66,6 +67,7 @@ if __name__ == "__main__":
     file_path = "res/Minh_1.wav"
     segment_length_s=80
     words_path = "res/target_words.txt"
+    words_split_path = "res/target_words_phonemes.txt"
     composed_path = "res/target_composed.txt"
     device = "cpu"
     if torch.cuda.is_available():
@@ -90,14 +92,17 @@ if __name__ == "__main__":
     print(f"[3] Selected language : {language}")
     print(f"[4] Audio file path : {file_path}")
     print(f"[5] Audio segment length : {segment_length_s}s")
-    print(f"[6] Target words file path : {words_path}s")
-    print(f"[7] Target composed words file path : {composed_path}s")
-    print(f"[8] Processing device : {device}")
+    print(f"[6] Target words file path : {words_path}")
+    print(f"[7] Target words splits : {words_split_path}")
+    print(f"[8] Target composed words file path : {composed_path}s")
+    print(f"[9] Processing device : {device}")
+    print(f"[10] Output folder : {output_folder}")
+    
     user_command = input("Enter setting number to change (Just press Enter to skip):")
     while user_command != "":
         try:
             value = int(user_command)
-            if value < 1 or value > 8:
+            if value < 1 or value > 10:
                 user_command = input("Please give an integer within range :")
             if value == 1:
                 vad = bool(input("VAD = (Enter '0' for False ; '1' for True)"))
@@ -112,8 +117,10 @@ if __name__ == "__main__":
             if value == 6:
                 words_path = input("Target words file path = ")
             if value == 7:
-                composed_path = input("Target composed words file path = ")
+                words_split_path = input("Target split words file path = ")
             if value == 8:
+                composed_path = input("Target composed words file path = ")
+            if value == 9:
                 if device == "cpu":
                     print("\nNo GPU available... Or not enough memory available on it.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
                 else:
@@ -122,6 +129,8 @@ if __name__ == "__main__":
                         device = "cpu"
                     elif choice==2:
                         device = "cuda:0"
+            if value == 10:
+                output_folder = input("Output folder = ")
             user_command = input("Enter setting number to change (Just press Enter to skip):")
         except Exception as e:
             print("User input not usable...")
@@ -135,29 +144,35 @@ if __name__ == "__main__":
     print(f"Disfluencies detection : {detect_disfluencies}")
     print(f"Selected language : {language}")
     print(f"Audio file path : {file_path}")
-    print(f"Audio segment length : {segment_length_s} s")
-    print(f"Target words file path : {words_path}s")
+    print(f"Audio segment length : {segment_length_s}s")
+    print(f"Target words file path : {words_path}")
+    print(f"Target words splits : {words_split_path}")
     print(f"Target composed words file path : {composed_path}s")
-    print(f"Processing with device : {device}")
+    print(f"Processing device : {device}")
+    print(f"Output folder : {output_folder}")
     print("###########################################")
     print(f"Transcribing with model : Whisper-{model}")
     start_time = np.int32(time.time())
     print("Pre-processing...")
     possible_cuts = audio_handler.find_possible_cuts(file_path)
-    files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_composed_path=composed_path, device_str=device, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
-    gc.collect()
-    end_time = np.int32(time.time())
-    execution_time_min = (end_time - start_time) // 60
-    execution_time_sec = (end_time - start_time) % 60
+    if file_handler.checkFilePaths(words_path, words_split_path, composed_path) == 0:
+        files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_words_split_path=words_split_path, t_composed_path=composed_path, device_str=device, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
+        gc.collect()
+        end_time = np.int32(time.time())
+        execution_time_min = (end_time - start_time) // 60
+        execution_time_sec = (end_time - start_time) % 60
 
-    if files_saved == None:
-        print("Failed transcribing\n")
-    else:
-        print(f"Done transcribing\n")
-    print(f"Total transcription time : {execution_time_min}m{execution_time_sec}s")
-
-    # with open("output/testing_no_ampl/small_whisper_transcription.json", 'r', encoding='utf-8') as f:
-    #     # Load the data from the file
-    #     data = json.load(f)
-    # tg, t = file_handler.json_to_textgrid(data)
-    # tg.save("output/testing_no_ampl/small___.TextGrid", format="short_textgrid", includeBlankSpaces=True)
+        if files_saved == None:
+            print("Failed transcribing\n")
+        else:
+            print(f"Done transcribing\n")
+        print(f"Total transcription time : {execution_time_min}m{execution_time_sec}s")
+# words_path = "res/target_words.txt"
+# words_split_path = "res/target_words_phonemes.txt"
+# composed_path = "res/target_composed.txt"
+# with open("output/test_1/large_whisper_transcription.json", 'r', encoding='utf-8') as f:
+#     # Load the data from the file
+#     data = json.load(f)
+#     # file_handler.json_to_textgrid(data, target_words_path=words_path, target_split_words_path=words_split_path, target_composed_path=composed_path)
+# tg, t = file_handler.json_to_textgrid(data, target_words_path=words_path, target_split_words_path=words_split_path, target_composed_path=composed_path)
+# tg.save("output/test_1/large___.TextGrid", format="short_textgrid", includeBlankSpaces=True)

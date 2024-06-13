@@ -6,12 +6,36 @@ import inspect
 
 import utils
 
-def json_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_composed_path = "res/target_composed.txt"):
-    text = combine_sentences_from_json(transcription_result)
+def getPhonemes(split_words_targets, target_idx, word_start, word_stop, composed_word, composed_end=9999):
+    split_words = []
+    if split_words_targets:
+        word_duration = word_stop - word_start
+        if composed_word != "": 
+            word_duration = word_duration / 2.0
+        phonemes = split_words_targets[target_idx]
 
+        start = word_start
+        stop = start
+        for i in range(len(phonemes)):
+            stop = stop + word_duration * ( float(1)/float(len(phonemes)))
+            if stop >= word_stop:
+                stop = word_stop - 0.0001
+            split_words.append((start, stop, phonemes[i]))
+            start = stop
+        if composed_word != "":
+            split_words.append((start, composed_end, composed_word))
+    return split_words
+
+def checkFilePaths(target_words_path, target_split_words_path, target_composed_path):
     try:
+        target_split_words = []
         target_words = []
         target_composed = []
+        if target_split_words != "":
+            with open(target_split_words_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    words = line.strip().split()
+                    target_split_words.append(words)
         with open(target_words_path, 'r', encoding='utf-8') as file:
             for line in file:
                 target_words.append(line.strip())
@@ -19,11 +43,35 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
             for line in file:
                 target_composed.append(line.strip())
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load target (composed) words : {e}")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load target words : \n{e}")
+        return -1
+    return 0
+
+def json_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_split_words_path="", target_composed_path = "res/target_composed.txt"):
+    text = combine_sentences_from_json(transcription_result)
+
+    try:
+        target_split_words = []
+        target_words = []
+        target_composed = []
+        if target_split_words != "":
+            with open(target_split_words_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    words = line.strip().split()
+                    target_split_words.append(words)
+        with open(target_words_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                target_words.append(line.strip())
+        with open(target_composed_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                target_composed.append(line.strip())
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load target (composed) words : \n{e}")
 
     sentences = []
     words = []
     t_words = []
+    split_words = []
     nb_targets = len(target_words)
     targets_counters = np.zeros(nb_targets).astype(np.int32)
     composed_targets_counters = np.zeros(nb_targets).astype(np.int32)
@@ -58,11 +106,17 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
                         if second_part == utils.remove_punctuation(next_word.lower()):
                             composed_targets_counters[id_target] = composed_targets_counters[id_target] + 1
                             t_words.append((word_start, segment['words'][idx+1]['end'], (str(composed_targets_counters[id_target]) + " - " + target_composed[id_target].lower())))
+                            phonemes = getPhonemes(target_split_words, id_target, word_start, word_end, second_part, segment['words'][idx+1]['end'])
+                            for phoneme in phonemes:
+                                split_words.append(phoneme)
                             # print(f"Found {target_composed[id_target].lower()} at {word_start}s")
                             idx = idx + 1
                             continue
                     targets_counters[id_target] = targets_counters[id_target] + 1
                     t_words.append((word_start, word_end, (str(targets_counters[id_target]) + " - " + word_text.lower())))
+                    phonemes = getPhonemes(target_split_words, id_target, word_start, word_end, "")
+                    for phoneme in phonemes:
+                        split_words.append(phoneme)
                     # print(f"Found {target_words[id_target].lower()} at {word_start}s")
 
     for idt in range(nb_targets):
@@ -77,27 +131,36 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
     tg = textgrid.Textgrid()
     end_time = max(segment['end'] for segment in transcription_result['segments'])
 
-    t_phon_tier = textgrid.IntervalTier('phonèmes', [], 0, end_time)
+
+    try:
+        t_phon_tier = textgrid.IntervalTier('phonèmes', split_words, 0, end_time)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'phonèmes', leaving empty.")
+        print(f"{e}")
+        t_phon_tier = textgrid.IntervalTier('phonèmes', [], 0, end_time)
     tg.addTier(t_phon_tier)
 
     try:
         t_word_tier = textgrid.IntervalTier('n°', t_words, 0, end_time)
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'n°', leaving empty. {e}")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'n°', leaving empty.")
+        print(f"{e}")
         t_word_tier = textgrid.IntervalTier('n°', [], 0, end_time)
     tg.addTier(t_word_tier)
 
     try:
         sentence_tier = textgrid.IntervalTier('phrases', sentences, 0, end_time)
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'phrases', leaving empty. {e}")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'phrases', leaving empty.")
+        print(f"{e}")
         sentence_tier = textgrid.IntervalTier('phrases', [], 0, end_time)
     tg.addTier(sentence_tier)
 
     try:
         discours_tier = textgrid.IntervalTier('discours', [(0, end_time, text)], 0, end_time)
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'discours', leaving empty. {e}")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to create textGrid tier 'discours', leaving empty.")
+        print(f"{e}")
         discours_tier = textgrid.IntervalTier('discours', [], 0, end_time)
     tg.addTier(discours_tier)
 
