@@ -30,7 +30,7 @@ def transcribe_segment(segment, device_str, model_string, vad, detect_disfluenci
         return None
     return result
 
-def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed_path, device_str="cpu", possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
+def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed_path, t_composed_split_path, device_str="cpu", possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
@@ -50,7 +50,7 @@ def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed
 
     textgrid_val, full_text = None, None
     try:
-        textgrid_val, full_text = file_handler.json_to_textgrid(combined_results, target_words_path=t_words_path, target_split_words_path=t_words_split_path, target_composed_path=t_composed_path)
+        textgrid_val, full_text = file_handler.json_to_textgrid(combined_results, target_words_path=t_words_path, target_split_words_path=t_words_split_path, target_composed_path=t_composed_path, target_composed_split_path=t_composed_split_path)
     except Exception as e:
         print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Error while creating textgrid : {e}")
 
@@ -63,12 +63,13 @@ if __name__ == "__main__":
     vad = False
     detect_disfluencies = False
     language="vi"
-    output_folder = "output/tes_0"
+    output_folder = "output/test_2"
     file_path = "res/Minh_1.wav"
     segment_length_s=80
     words_path = "res/target_words.txt"
     words_split_path = "res/target_words_phonemes.txt"
     composed_path = "res/target_composed.txt"
+    composed_split_path = "res/target_composed_phonemes.txt"
     device = "cpu"
     if torch.cuda.is_available():
         free_mem, global_mem = torch.cuda.mem_get_info()
@@ -94,15 +95,16 @@ if __name__ == "__main__":
     print(f"[5] Audio segment length : {segment_length_s}s")
     print(f"[6] Target words file path : {words_path}")
     print(f"[7] Target words splits : {words_split_path}")
-    print(f"[8] Target composed words file path : {composed_path}s")
-    print(f"[9] Processing device : {device}")
-    print(f"[10] Output folder : {output_folder}")
+    print(f"[8] Target composed words file path : {composed_path}")
+    print(f"[9] Target composed words splits file path : {composed_split_path}")
+    print(f"[10] Processing device : {device}")
+    print(f"[11] Output folder : {output_folder}")
     
     user_command = input("Enter setting number to change (Just press Enter to skip):")
     while user_command != "":
         try:
             value = int(user_command)
-            if value < 1 or value > 10:
+            if value < 1 or value > 11:
                 user_command = input("Please give an integer within range :")
             if value == 1:
                 vad = bool(input("VAD = (Enter '0' for False ; '1' for True)"))
@@ -121,6 +123,8 @@ if __name__ == "__main__":
             if value == 8:
                 composed_path = input("Target composed words file path = ")
             if value == 9:
+                composed_split_path = input("Target split composed words file path = ")
+            if value == 10:
                 if device == "cpu":
                     print("\nNo GPU available... Or not enough memory available on it.\nIf an NVIDIA GPU is available, make sure the drivers are setup : https://developer.nvidia.com/cuda-downloads\n")
                 else:
@@ -129,7 +133,7 @@ if __name__ == "__main__":
                         device = "cpu"
                     elif choice==2:
                         device = "cuda:0"
-            if value == 10:
+            if value == 11:
                 output_folder = input("Output folder = ")
             user_command = input("Enter setting number to change (Just press Enter to skip):")
         except Exception as e:
@@ -156,7 +160,7 @@ if __name__ == "__main__":
     print("Pre-processing...")
     possible_cuts = audio_handler.find_possible_cuts(file_path)
     if file_handler.checkFilePaths(words_path, words_split_path, composed_path) == 0:
-        files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_words_split_path=words_split_path, t_composed_path=composed_path, device_str=device, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
+        files_saved = transcribe_from_file(file_path=file_path, t_words_path=words_path, t_words_split_path=words_split_path, t_composed_path=composed_path, t_composed_split_path=composed_split_path, device_str=device, possible_cuts=possible_cuts, output_folder=output_folder, model_string=model, vad=vad, detect_disfluencies=detect_disfluencies, language=language, segment_length_s=segment_length_s)
         gc.collect()
         end_time = np.int32(time.time())
         execution_time_min = (end_time - start_time) // 60
@@ -170,9 +174,10 @@ if __name__ == "__main__":
 # words_path = "res/target_words.txt"
 # words_split_path = "res/target_words_phonemes.txt"
 # composed_path = "res/target_composed.txt"
+# composed_split_path = "res/target_composed_phonemes.txt"
 # with open("output/test_1/large_whisper_transcription.json", 'r', encoding='utf-8') as f:
 #     # Load the data from the file
 #     data = json.load(f)
 #     # file_handler.json_to_textgrid(data, target_words_path=words_path, target_split_words_path=words_split_path, target_composed_path=composed_path)
-# tg, t = file_handler.json_to_textgrid(data, target_words_path=words_path, target_split_words_path=words_split_path, target_composed_path=composed_path)
+# tg, t = file_handler.json_to_textgrid(data, target_words_path=words_path, target_split_words_path=words_split_path, target_composed_path=composed_path, target_composed_split_path=composed_split_path)
 # tg.save("output/test_1/large___.TextGrid", format="short_textgrid", includeBlankSpaces=True)

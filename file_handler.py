@@ -47,14 +47,15 @@ def checkFilePaths(target_words_path, target_split_words_path, target_composed_p
         return -1
     return 0
 
-def json_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_split_words_path="", target_composed_path = "res/target_composed.txt"):
+def json_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_split_words_path="", target_composed_path = "res/target_composed.txt", target_composed_split_path=""):
     text = combine_sentences_from_json(transcription_result)
 
     try:
         target_split_words = []
         target_words = []
         target_composed = []
-        if target_split_words != "":
+        target_split_composed = []
+        if target_split_words_path != "":
             with open(target_split_words_path, 'r', encoding='utf-8') as file:
                 for line in file:
                     words = line.strip().split()
@@ -65,6 +66,10 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
         with open(target_composed_path, 'r', encoding='utf-8') as file:
             for line in file:
                 target_composed.append(line.strip())
+        if target_composed_split_path != "":
+            with open(target_composed_split_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    target_split_composed.append(line.strip())
     except Exception as e:
         print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load target (composed) words : \n{e}")
 
@@ -106,7 +111,7 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
                         if second_part == utils.remove_punctuation(next_word.lower()):
                             composed_targets_counters[id_target] = composed_targets_counters[id_target] + 1
                             t_words.append((word_start, segment['words'][idx+1]['end'], (str(composed_targets_counters[id_target]) + " - " + target_composed[id_target].lower())))
-                            phonemes = getPhonemes(target_split_words, id_target, word_start, word_end, second_part, segment['words'][idx+1]['end'])
+                            phonemes = getPhonemes(target_split_words, id_target, word_start, word_end, target_split_composed[id_target], segment['words'][idx+1]['end'])
                             for phoneme in phonemes:
                                 split_words.append(phoneme)
                             # print(f"Found {target_composed[id_target].lower()} at {word_start}s")
