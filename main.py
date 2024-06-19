@@ -58,21 +58,6 @@ root.title("Parameter Selection")
 root.geometry("1200x800")
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
-languages = ["dutch", "spanish", "korean", "italian", "german", "thai", "russian", "portuguese", "polish", "indonesian", "mandarin", "swedish", "czech", "english", "japanese", "french", "romanian", "cantonese", "turkish", "mandarin", "catalan", "hungarian", "ukrainian", "greek", "bulgarian", "arabic", "serbian", "macedonian", "cantonese", "latvian", "slovenian", "hindi", "galician", "danish", "urdu", "slovak", "hebrew", "finnish", "azerbaijani", "lithuanian", "estonian", "nynorsk", "welsh", "punjabi", "afrikaans", "persian", "basque", "vietnamese", "bengali", "nepali", "marathi", "belarusian", "kazakh", "armenian", "swahili", "tamil", "albanian"]
-devices = ["cpu"]
-if torch.cuda.is_available():
-    free_mem, global_mem = torch.cuda.mem_get_info()
-    print("GPU Detected, available memory : {:2.2f}/{:2.2f} Go".format(free_mem/1000000000, global_mem/1000000000))
-    if free_mem > 10000000000:
-        devices.append("cuda:0")
-        print("GPU has enough memory.")
-        try:
-            torch.cuda.empty_cache()
-        except Exception as e:
-            print("Failed to set CUDA parameters...")
-    else:
-        print("GPU doesn't have enough memory.")
-
 model_var = tk.StringVar(value="large")
 vad_var = tk.BooleanVar(value=False)
 detect_disfluencies_var = tk.BooleanVar(value=False)
@@ -206,6 +191,15 @@ def start_task():
 
 if __name__ == "__main__":
 
+    languages = ["dutch", "spanish", "korean", "italian", "german", "thai", "russian", "portuguese", "polish", "indonesian", "mandarin", "swedish", "czech", "english", "japanese", "french", "romanian", "cantonese", "turkish", "mandarin", "catalan", "hungarian", "ukrainian", "greek", "bulgarian", "arabic", "serbian", "macedonian", "cantonese", "latvian", "slovenian", "hindi", "galician", "danish", "urdu", "slovak", "hebrew", "finnish", "azerbaijani", "lithuanian", "estonian", "nynorsk", "welsh", "punjabi", "afrikaans", "persian", "basque", "vietnamese", "bengali", "nepali", "marathi", "belarusian", "kazakh", "armenian", "swahili", "tamil", "albanian"]
+    devices = ["cpu"]
+    if torch.cuda.is_available():
+        free_mem, global_mem = torch.cuda.mem_get_info()
+        # print("GPU Detected, available memory : {:2.2f}/{:2.2f} Go".format(free_mem/1000000000, global_mem/1000000000))
+        if free_mem > 10000000000:
+            devices.append("cuda:0")
+            # print("GPU has enough memory.")
+
     for field in fields:
         frame = tk.Frame(root)
         label = tk.Label(frame, text=field[0])
@@ -241,6 +235,18 @@ if __name__ == "__main__":
     # Redirect stdout to the Text widget
     sys.stdout = RedirectText(console_text)
     sys.stderr = RedirectText(console_text)
+
+    if torch.cuda.is_available():
+        free_mem, global_mem = torch.cuda.mem_get_info()
+        print("GPU Detected, available memory : {:2.2f}/{:2.2f} Go".format(free_mem/1000000000, global_mem/1000000000))
+        if free_mem > 10000000000:
+            print("GPU has enough memory.")
+            try:
+                torch.cuda.empty_cache()
+            except Exception as e:
+                print("Failed to set CUDA parameters...")
+        else:
+            print("GPU doesn't have enough memory.")
 
     root.mainloop()
 
