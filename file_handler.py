@@ -26,24 +26,22 @@ def getPhonemes(split_words_targets, target_idx, word_start, word_stop, composed
             split_words.append((start, composed_end, composed_word))
     return split_words
 
-def checkFilePaths(target_words_path, target_split_words_path, target_composed_path):
+def checkFilePaths(file_path, target_words_path, target_split_words_path, target_composed_path):
     try:
-        target_split_words = []
-        target_words = []
-        target_composed = []
-        if target_split_words != "":
-            with open(target_split_words_path, 'r', encoding='utf-8') as file:
-                for line in file:
-                    words = line.strip().split()
-                    target_split_words.append(words)
-        with open(target_words_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                target_words.append(line.strip())
-        with open(target_composed_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                target_composed.append(line.strip())
+        if target_split_words_path != "" and not os.path.isfile(target_split_words_path):
+            print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load input file : {target_split_words_path}")
+            return -1
+        if target_words_path != "" and not os.path.isfile(target_words_path):
+            print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load input file : {target_words_path}")
+            return -1
+        if target_composed_path != "" and not os.path.isfile(target_composed_path):
+            print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load input file : {target_composed_path}")
+            return -1
+        if file_path != "" and not os.path.isfile(file_path):
+            print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load input file : {file_path}")
+            return -1
     except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load target words : \n{e}")
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to load input file : \n{e}")
         return -1
     return 0
 
@@ -60,12 +58,14 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
                 for line in file:
                     words = line.strip().split()
                     target_split_words.append(words)
-        with open(target_words_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                target_words.append(line.strip())
-        with open(target_composed_path, 'r', encoding='utf-8') as file:
-            for line in file:
-                target_composed.append(line.strip())
+        if target_words_path != "":
+            with open(target_words_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    target_words.append(line.strip())
+        if target_composed_path != "":
+            with open(target_composed_path, 'r', encoding='utf-8') as file:
+                for line in file:
+                    target_composed.append(line.strip())
         if target_composed_split_path != "":
             with open(target_composed_split_path, 'r', encoding='utf-8') as file:
                 for line in file:
@@ -77,9 +77,11 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
     words = []
     t_words = []
     split_words = []
-    nb_targets = len(target_words)
-    targets_counters = np.zeros(nb_targets).astype(np.int32)
-    composed_targets_counters = np.zeros(nb_targets).astype(np.int32)
+    nb_targets = 0
+    if target_words:
+        nb_targets = len(target_words)
+        targets_counters = np.zeros(nb_targets).astype(np.int32)
+        composed_targets_counters = np.zeros(nb_targets).astype(np.int32)
     print("\n")
 
     prev_end = 0.0
