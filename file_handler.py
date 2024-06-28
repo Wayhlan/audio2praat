@@ -200,15 +200,15 @@ def combine_sentences_from_json(combined_result_json):
         print(f"Error while compiling text from json transcipt : {e}")
     return text_val
 
-def save_output_files(dest_folder, tag, whisper_transcription, textgrid_val, full_text):
+def save_output_files(dest_folder, whisper_transcription, textgrid_val, full_text):
     if not os.path.exists(dest_folder):
         os.makedirs(dest_folder)
     if dest_folder[-1] != "/":
         dest_folder = dest_folder + "/"
 
-    transcript_path = dest_folder + tag + "_whisper_transcription.json"
-    grid_path = dest_folder + tag + "_grid.TextGrid"
-    text_path = dest_folder + tag + "_plain_text.txt"
+    transcript_path = dest_folder + "_whisper_transcription.json"
+    grid_path = dest_folder + "_grid.TextGrid"
+    text_path = dest_folder + "_plain_text.txt"
 
     saved_files = []
     try:

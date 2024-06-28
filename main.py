@@ -109,7 +109,7 @@ def transcribe_segment(segment, device_str, vad, detect_disfluencies, language):
         return None
     return result
 
-def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed_path, t_composed_split_path, device_str="cpu", possible_cuts=[], output_folder="", model_string="large", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
+def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed_path, t_composed_split_path, device_str="cpu", possible_cuts=[], output_folder="", vad=False, detect_disfluencies=False, language="vietnamese", segment_length_s=60):
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s, possible_cuts)
 
@@ -117,7 +117,7 @@ def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed
     transcription_segments = []
     for segment in segments:
         audio = whisper.load_audio(segment)
-        transcription_pt = transcribe_segment(audio, device_str, model_string, vad, detect_disfluencies, language)
+        transcription_pt = transcribe_segment(audio, device_str, vad, detect_disfluencies, language)
         if transcription_pt:
             transcription_segments.append(transcription_pt)
         else:
@@ -133,7 +133,7 @@ def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed
     except Exception as e:
         print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Error while creating textgrid : {e}")
 
-    file_handler.save_output_files(output_folder, model_string, combined_results, textgrid_val, full_text)
+    file_handler.save_output_files(output_folder, combined_results, textgrid_val, full_text)
 
     return textgrid_val
 
@@ -175,7 +175,7 @@ def run_program():
     if file_handler.checkFilePaths(params["file_path"], params["words_path"], params["words_split_path"], params["composed_path"]) == 0:
         print("Pre-processing...")
         possible_cuts = audio_handler.find_possible_cuts(params["file_path"])
-        files_saved = transcribe_from_file(file_path=params["file_path"], t_words_path=params["words_path"], t_words_split_path=params["words_split_path"], t_composed_path=params["composed_path"], t_composed_split_path=params["composed_split_path"], device_str=params["device"], possible_cuts=possible_cuts, output_folder=params["output_folder"], model_string=params["model"], vad=params["vad"], detect_disfluencies=params["detect_disfluencies"], language=params["language"], segment_length_s=params["segment_length_s"])
+        files_saved = transcribe_from_file(file_path=params["file_path"], t_words_path=params["words_path"], t_words_split_path=params["words_split_path"], t_composed_path=params["composed_path"], t_composed_split_path=params["composed_split_path"], device_str=params["device"], possible_cuts=possible_cuts, output_folder=params["output_folder"], vad=params["vad"], detect_disfluencies=params["detect_disfluencies"], language=params["language"], segment_length_s=params["segment_length_s"])
         gc.collect()
         end_time = np.int32(time.time())
         execution_time_min = (end_time - start_time) // 60

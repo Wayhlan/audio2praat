@@ -1,26 +1,26 @@
-## Requirements
+# Requirements
 Execution :  
 12 Go RAM minimum  
 (10 Go GPU on Nvidia cards only, will run on CPU otherwise)  
 Build :  
 Python 3.10 and up  
 
-## Execution from pre-built folder  
+# Execution from pre-built folder  
 1.2.0 On google drive : https://drive.google.com/file/d/1ESl6ZVZYg8lZczvpWNYtfp89EGXe34mT/view?usp=drive_link  
-### Prerequisite
+## Prerequisite
 - An input audio file, can be .wav, .mp3 (not tested with others)  
 - Target words, composed words and phonemes should be optionnal, only the sentence-level transcription will be produced if no input file is given  
 
-#### Input files format
+### Input files format
 Target words, and other input file need to be text files with a single target per line. For the phoneme file, each line contains all the target's phoneme, separated by spaces    
 The input files need to have the same target counts (if 5 words, 5 phonemes (5 composed words, 5 composed phonemes)) Example :  
-##### Target words
+#### Target words
 ```bash
 she
 blue
 clock
 ```
-##### Target phonemes
+#### Target phonemes
 ```bash
 sh ee
 b l oo
@@ -28,7 +28,7 @@ k l o k
 ```
 
 
-## Install :  
+# Installation for build + python execution :  
 Python : https://www.python.org/downloads/windows/  
 FFMPEG : https://ffmpeg.org
 For Nvidia Boards : https://developer.nvidia.com/cuda-downloads  
@@ -42,9 +42,16 @@ pip install torch
 pip install pydub
 ```
 
-### Update if necessary : 
+## Update if necessary : 
 ```bash
 pip3 install --upgrade --no-deps --force-reinstall git+https://github.com/linto-ai/whisper-timestamped
+```
+
+## Execution from python command line
+
+Simply this command from any console :  
+```bash
+python main.py
 ```
 
 ## Build standalone executable :
