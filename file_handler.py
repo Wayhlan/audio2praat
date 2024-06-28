@@ -45,6 +45,7 @@ def checkFilePaths(file_path, target_words_path, target_split_words_path, target
         return -1
     return 0
 
+# TODO : Big and ugly.. find a way to split that...
 def json_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_split_words_path="", target_composed_path = "res/target_composed.txt", target_composed_split_path=""):
     text = combine_sentences_from_json(transcription_result)
 
@@ -173,6 +174,83 @@ def json_to_textgrid(transcription_result, target_words_path = "res/target_words
 
     return tg, text
 
+def adjust_segments(transcription_segments, lengths):
+    combined_segments = []
+    added_time = 0
+    for i, segment in enumerate(transcription_segments):
+        added_time += lengths[i-1]
+        for sub_segment in segment["segments"]:
+            sub_segment["id"] = f"{i}_{sub_segment['id']}"
+            sub_segment["start"] += added_time
+            sub_segment["end"] += added_time
+            for word in sub_segment['words']:
+                word["start"] += added_time
+                word["end"] += added_time
+            combined_segments.append(sub_segment)
+    return combined_segments
+
+
+def combine_sentences_from_json(combined_result_json):
+    text_val = ""
+    try:
+        for segment in combined_result_json['segments']:
+            text_val = text_val + segment['text']
+            text_val = text_val + " "
+    except Exception as e:
+        print(f"Error while compiling text from json transcipt : {e}")
+    return text_val
+
+def save_output_files(dest_folder, tag, whisper_transcription, textgrid_val, full_text):
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)
+    if dest_folder[-1] != "/":
+        dest_folder = dest_folder + "/"
+
+    transcript_path = dest_folder + tag + "_whisper_transcription.json"
+    grid_path = dest_folder + tag + "_grid.TextGrid"
+    text_path = dest_folder + tag + "_plain_text.txt"
+
+    saved_files = []
+    try:
+        with open(transcript_path, "w", encoding="utf-8") as f:
+            json.dump(whisper_transcription, f, indent=2, ensure_ascii=False)
+            saved_files.append(transcript_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{transcript_path}' : {e}")
+
+    try:
+        if full_text:
+            with open(text_path, "w", encoding="utf-8") as f:
+                f.write(full_text)
+                saved_files.append(text_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{text_path}' : {e}")
+
+    try:
+        if textgrid_val:
+            textgrid_val.save(grid_path, format="short_textgrid", includeBlankSpaces=True)
+            saved_files.append(grid_path)
+    except Exception as e:
+        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{grid_path}' : {e}")
+
+    return saved_files
+
+
+##############################################
+############### UNUSED CODE ##################
+##############################################
+
+
+def combine_sentences_from_whisperX(combined_result_json):
+    text_val = ""
+    try:
+        output = combined_result_json['output']
+        for segment in output['segments']:
+            text_val = text_val + segment['text']
+            text_val = text_val + " "
+    except Exception as e:
+        print(f"Error while compiling text from json transcipt : {e}")
+    return text_val
 def whisperX_to_textgrid(transcription_result, target_words_path = "res/target_words.txt", target_composed_path = "res/target_composed.txt"):
     text = combine_sentences_from_whisperX(transcription_result)
 
@@ -272,76 +350,3 @@ def whisperX_to_textgrid(transcription_result, target_words_path = "res/target_w
     tg.addTier(discours_tier)
 
     return tg, text
-
-
-def adjust_segments(transcription_segments, lengths):
-    combined_segments = []
-    added_time = 0
-    for i, segment in enumerate(transcription_segments):
-        added_time += lengths[i-1]
-        for sub_segment in segment["segments"]:
-            sub_segment["id"] = f"{i}_{sub_segment['id']}"
-            sub_segment["start"] += added_time
-            sub_segment["end"] += added_time
-            for word in sub_segment['words']:
-                word["start"] += added_time
-                word["end"] += added_time
-            combined_segments.append(sub_segment)
-    return combined_segments
-
-
-def combine_sentences_from_json(combined_result_json):
-    text_val = ""
-    try:
-        for segment in combined_result_json['segments']:
-            text_val = text_val + segment['text']
-            text_val = text_val + " "
-    except Exception as e:
-        print(f"Error while compiling text from json transcipt : {e}")
-    return text_val
-
-def combine_sentences_from_whisperX(combined_result_json):
-    text_val = ""
-    try:
-        output = combined_result_json['output']
-        for segment in output['segments']:
-            text_val = text_val + segment['text']
-            text_val = text_val + " "
-    except Exception as e:
-        print(f"Error while compiling text from json transcipt : {e}")
-    return text_val
-
-def save_output_files(dest_folder, tag, whisper_transcription, textgrid_val, full_text):
-    if not os.path.exists(dest_folder):
-        os.makedirs(dest_folder)
-    if dest_folder[-1] != "/":
-        dest_folder = dest_folder + "/"
-
-    transcript_path = dest_folder + tag + "_whisper_transcription.json"
-    grid_path = dest_folder + tag + "_grid.TextGrid"
-    text_path = dest_folder + tag + "_plain_text.txt"
-
-    saved_files = []
-    try:
-        with open(transcript_path, "w", encoding="utf-8") as f:
-            json.dump(whisper_transcription, f, indent=2, ensure_ascii=False)
-            saved_files.append(transcript_path)
-    except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{transcript_path}' : {e}")
-
-    try:
-        if full_text:
-            with open(text_path, "w", encoding="utf-8") as f:
-                f.write(full_text)
-                saved_files.append(text_path)
-    except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{text_path}' : {e}")
-
-    try:
-        if textgrid_val:
-            textgrid_val.save(grid_path, format="short_textgrid", includeBlankSpaces=True)
-            saved_files.append(grid_path)
-    except Exception as e:
-        print(f"{inspect.currentframe().f_code.co_name}:{inspect.currentframe().f_lineno} Failed to save '{grid_path}' : {e}")
-
-    return saved_files

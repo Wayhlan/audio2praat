@@ -20,11 +20,13 @@ import re
 
 running = False
 
+# Allows for all subprocesses and function to stop directly when clicking the Cross
 def on_closing():
     os._exit(0)
 
 gc.enable()
 
+# Allows all usual console output (stdout+stderr) to be printed into the GUI window instead
 class RedirectText(object):
     def __init__(self, text_widget):
         self.text_widget = text_widget
@@ -35,6 +37,7 @@ class RedirectText(object):
         # Use re.findall() to find all matches in the input string
         matches = re.findall(pattern, string)
         if matches:
+            # Deleting the last line to prevent the progress bar from being duplicated over and over... TODO : Find a way to print it smoothly...
             self.text_widget.delete("end-2l", "end-1l")
             self.text_widget.insert(tk.END, matches[-1] + '\n')
         else:
@@ -45,6 +48,7 @@ class RedirectText(object):
     def flush(self):
         pass
 
+# Utility function to fetch target file/folder
 def browse_file(var):
     filename = filedialog.askopenfilename()
     var.set(filename)
@@ -53,11 +57,14 @@ def browse_folder(var):
     foldername = filedialog.askdirectory()
     var.set(foldername)
 
+
+# Tkinter GUI window definition
 root = tk.Tk()
-root.title("Parameter Selection")
+root.title("audio2praat")
 root.geometry("1200x800")
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
+# Variable definition
 model_var = tk.StringVar(value="large")
 vad_var = tk.BooleanVar(value=False)
 detect_disfluencies_var = tk.BooleanVar(value=False)
@@ -71,6 +78,7 @@ composed_path_var = tk.StringVar(value="res/target_composed.txt")
 composed_split_path_var = tk.StringVar(value="res/target_composed_phonemes.txt")
 device_var = tk.StringVar(value="cpu")
 
+# Defining all possible parameters to create window. TODO : Make a single list of them instead of having 'fields' + 'params'... Too much hard-coded..
 fields = [
     ("Model", model_var),
     ("VAD", vad_var),
@@ -86,11 +94,11 @@ fields = [
     ("Device", device_var),
 ]
 
-def transcribe_segment(segment, device_str, model_string, vad, detect_disfluencies, language):
+def transcribe_segment(segment, device_str, vad, detect_disfluencies, language):
     gc.collect()
     devices = torch.device(device_str)
     try:
-        if os.path.isfile("models/large-v3.pt"):
+        if os.path.isfile("models/large-v3.pt"): # Hardcoded, other models don't yield precise enough results.
             model = whisper.load_model("models/large-v3.pt", device=devices)
         else:
             print("Model not found in 'models/' folder. Trying to download/load it from cache.")
@@ -129,6 +137,8 @@ def transcribe_from_file(file_path, t_words_path, t_words_split_path, t_composed
 
     return textgrid_val
 
+
+# Main program function, launched as a separate Thread to make it independant from GUI rendering thread (which is the main thread)
 def run_program():
     params = {
         "model": model_var.get(),
@@ -179,6 +189,7 @@ def run_program():
             messagebox.showinfo("Info", "Done transcribing\n")
     else:
         messagebox.showinfo("Info", "At least one input file couldn't be found\n")
+        # Thread management
     global running
     running = False
 
@@ -195,11 +206,10 @@ if __name__ == "__main__":
     devices = ["cpu"]
     if torch.cuda.is_available():
         free_mem, global_mem = torch.cuda.mem_get_info()
-        # print("GPU Detected, available memory : {:2.2f}/{:2.2f} Go".format(free_mem/1000000000, global_mem/1000000000))
         if free_mem > 10000000000:
             devices.append("cuda:0")
-            # print("GPU has enough memory.")
 
+    # Creating the GUI window option with all the parameters
     for field in fields:
         frame = tk.Frame(root)
         label = tk.Label(frame, text=field[0])
