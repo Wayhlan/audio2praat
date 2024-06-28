@@ -16,16 +16,42 @@ Target words, and other input file need to be text files with a single target pe
 The input files need to have the same target counts (if 5 words, 5 phonemes (5 composed words, 5 composed phonemes)) Example :  
 #### Target words
 ```bash
+black
 she
 blue
 clock
 ```
 #### Target phonemes
 ```bash
+b l a k
 sh ee
 b l oo
 k l o k
 ```
+
+### Produced output
+A Praat ".textGrid" file is always produced, that file contains 4 tiers :   
+- A 'discours' Tier, containing the whole transcription as text. This part is always produced.  
+- A 'phrases' Tier, containing the different phrases, timestamped. This part is always produced.  
+- A 'n°' Tier, containing the target words, if they were provided in an input file.  
+- A 'phonèmes' Tier, containing the target phonèmes, if they were provided in an input file.  
+It is possible to search for composed words as well (by adding the corresponding input files). Note : The second par of the composed word will not be split into phonemes.  
+Example of composed input files :  
+#### Target composed words 
+```bash
+black sheep
+she is
+```
+
+Note : Target composed words will only be searched if their first word is present at the same line in the input target words...! (TODO : Fix that?)  
+#### Target phonemes
+```bash
+b l a k
+sh ee
+```
+
+
+
 
 
 # Installation for build + python execution :  
