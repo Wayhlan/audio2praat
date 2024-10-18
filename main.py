@@ -83,7 +83,7 @@ fields = [
     ("Device", device_var),
 ]
 
-def transcribe_segment(segment, device_str, model_str, vad, detect_disfluencies, language):
+def transcribe_segment(segment, device_str, language):
     gc.collect()
     devices = torch.device(device_str)
     try:
@@ -92,13 +92,13 @@ def transcribe_segment(segment, device_str, model_str, vad, detect_disfluencies,
         else:
             print("Model not found in 'models/' folder. Trying to download/load it from cache.")
             model = whisper.load_model("small", device=devices) # try to download it
-        result = whisper.transcribe(model, segment, vad=vad, detect_disfluencies=detect_disfluencies, language=language)
+        result = whisper.transcribe(model, segment, language=language)
     except Exception as e:
         print(f"Failed to transcribe with exception : {e}")
         return None
     return result
 
-def transcribe_from_file(file_path, device_str="cpu", output_folder="", model="", vad=False, detect_disfluencies=False, language="french", segment_length_s=40):
+def transcribe_from_file(file_path, device_str="cpu", output_folder="", language="french", segment_length_s=40):
 
     segments, lengths = audio_handler.split_audio(file_path, segment_length_s)
 
@@ -106,7 +106,7 @@ def transcribe_from_file(file_path, device_str="cpu", output_folder="", model=""
     transcription_segments = []
     for segment in segments:
         audio = whisper.load_audio(segment)
-        transcription_pt = transcribe_segment(audio, device_str, model, vad, detect_disfluencies, language)
+        transcription_pt = transcribe_segment(audio, device_str, language)
         if transcription_pt:
             transcription_segments.append(transcription_pt)
         else:
@@ -151,7 +151,7 @@ def run_program():
     start_time = np.int32(time.time())
     if file_handler.checkFilePaths(params["file_path"]) == 0:
         print("Pre-processing...")
-        extracted_text = transcribe_from_file(file_path=params["file_path"], device_str=params["device"], output_folder=params["output_folder"], model=model_var, vad=False, detect_disfluencies=False, language=params["language"], segment_length_s=params["segment_length_s"])
+        extracted_text = transcribe_from_file(file_path=params["file_path"], device_str=params["device"], output_folder=params["output_folder"], language=params["language"], segment_length_s=params["segment_length_s"])
         gc.collect()
         end_time = np.int32(time.time())
         execution_time_min = (end_time - start_time) // 60
