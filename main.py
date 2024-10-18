@@ -57,10 +57,9 @@ def browse_folder(var):
     foldername = filedialog.askdirectory()
     var.set(foldername)
 
-
 # Tkinter GUI window definition
 root = tk.Tk()
-root.title("simpleTranscription")
+root.title("simpleTranscriber")
 root.geometry("800x600")
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -70,12 +69,11 @@ output_folder_var = tk.StringVar(value="output/S5")
 file_path_var = tk.StringVar(value="res/entretien.wav")
 segment_length_s_var = tk.IntVar(value=40)
 
-# Defining all possible parameters to create window. TODO : Make a single list of them instead of having 'fields' + 'params'... Too much hard-coded..
+# Defining all possible parameters to create window.
 fields = [
+    ("Input file path", file_path_var, browse_file),
     ("Language", language_var),
-    ("Output Folder", output_folder_var, browse_folder),
-    ("File Path", file_path_var, browse_file),
-    ("Segment Length (s)", segment_length_s_var),
+    ("Output folder", output_folder_var, browse_folder),
 ]
 
 def transcribe_segment(segment, language):
@@ -128,24 +126,21 @@ def transcribe_from_file(file_path, output_folder="", language="french", segment
 # Main program function, launched as a separate Thread to make it independant from GUI rendering thread (which is the main thread)
 def run_program():
     params = {
+        "file_path": file_path_var.get(),
         "language": language_var.get(),
         "output_folder": output_folder_var.get(),
-        "file_path": file_path_var.get(),
-        "segment_length_s": segment_length_s_var.get(),
     }
 
     print("\n###########################################")
     print("Settings : ")
-    print(f"Selected language : {params["language"]}")
     print(f"Input file path : {params["file_path"]}")
-    print(f"Audio segment length : {params["segment_length_s"]}s")
+    print(f"Selected language : {params["language"]}")
     print(f"Output folder : {params["output_folder"]}")
     print("###########################################")
-    print(f"Transcribing with model : Whisper-small")
     start_time = np.int32(time.time())
     if file_handler.checkFilePaths(params["file_path"]) == 0:
         print("Pre-processing...")
-        extracted_text = transcribe_from_file(file_path=params["file_path"], output_folder=params["output_folder"], language=params["language"], segment_length_s=params["segment_length_s"])
+        extracted_text = transcribe_from_file(file_path=params["file_path"], output_folder=params["output_folder"], language=params["language"], segment_length_s=40)
         gc.collect()
         end_time = np.int32(time.time())
         execution_time_min = (end_time - start_time) // 60
@@ -158,8 +153,8 @@ def run_program():
         else:
             messagebox.showinfo("Info", f"Done transcribing, result saved at :\n'{params["output_folder"]}'\n")
     else:
-        messagebox.showinfo("Info", "At least one input file couldn't be found\n")
-        # Thread management
+        messagebox.showinfo("Info", "Input file couldn't be found\n")
+    # Thread management
     global running
     running = False
 
@@ -192,7 +187,7 @@ if __name__ == "__main__":
         
         frame.pack(fill="x")
 
-    run_button = tk.Button(root, text="Run Program", command=start_task)
+    run_button = tk.Button(root, text="Start transcribing", command=start_task)
     run_button.pack(pady=10)
 
     console_frame = tk.Frame(root)
