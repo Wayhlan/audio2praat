@@ -60,8 +60,8 @@ def browse_folder(var):
 
 # Tkinter GUI window definition
 root = tk.Tk()
-root.title("audio2praat")
-root.geometry("1200x800")
+root.title("simpleTranscription")
+root.geometry("800x600")
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Variable definition
@@ -76,9 +76,6 @@ device_var = tk.StringVar(value="cpu")
 
 # Defining all possible parameters to create window. TODO : Make a single list of them instead of having 'fields' + 'params'... Too much hard-coded..
 fields = [
-    ("Model", model_var),
-    ("VAD", vad_var),
-    ("Detect Disfluencies", detect_disfluencies_var),
     ("Language", language_var),
     ("Output Folder", output_folder_var, browse_folder),
     ("File Path", file_path_var, browse_file),
@@ -133,9 +130,6 @@ def transcribe_from_file(file_path, device_str="cpu", output_folder="", model=""
 # Main program function, launched as a separate Thread to make it independant from GUI rendering thread (which is the main thread)
 def run_program():
     params = {
-        "model": model_var.get(),
-        "vad": vad_var.get(),
-        "detect_disfluencies": detect_disfluencies_var.get(),
         "language": language_var.get(),
         "output_folder": output_folder_var.get(),
         "file_path": file_path_var.get(),
@@ -147,19 +141,17 @@ def run_program():
     print(f"Starting transcription for '{params["file_path"]}' :")
     print("\n###########################################")
     print("Settings : ")
-    print(f"Voice Activity Detection (VAD) : {params["vad"]}")
-    print(f"Disfluencies detection : {params["detect_disfluencies"]}")
     print(f"Selected language : {params["language"]}")
     print(f"Audio file path : {params["file_path"]}")
     print(f"Audio segment length : {params["segment_length_s"]}s")
     print(f"Processing device : {params["device"]}")
     print(f"Output folder : {params["output_folder"]}")
     print("###########################################")
-    print(f"Transcribing with model : Whisper-{params["model"]}")
+    print(f"Transcribing with model : Whisper-small")
     start_time = np.int32(time.time())
     if file_handler.checkFilePaths(params["file_path"]) == 0:
         print("Pre-processing...")
-        extracted_text = transcribe_from_file(file_path=params["file_path"], device_str=params["device"], output_folder=params["output_folder"], model=model_var, vad=params["vad"], detect_disfluencies=params["detect_disfluencies"], language=params["language"], segment_length_s=params["segment_length_s"])
+        extracted_text = transcribe_from_file(file_path=params["file_path"], device_str=params["device"], output_folder=params["output_folder"], model=model_var, vad=False, detect_disfluencies=False, language=params["language"], segment_length_s=params["segment_length_s"])
         gc.collect()
         end_time = np.int32(time.time())
         execution_time_min = (end_time - start_time) // 60
