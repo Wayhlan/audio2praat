@@ -65,8 +65,8 @@ root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # Variable definition
 language_var = tk.StringVar(value="french")
-output_folder_var = tk.StringVar(value="output/S5")
-file_path_var = tk.StringVar(value="res/entretien.wav")
+output_folder_var = tk.StringVar(value="output")
+file_path_var = tk.StringVar(value="entretien.wav")
 segment_length_s_var = tk.IntVar(value=40)
 
 # Defining all possible parameters to create window.
