@@ -35,14 +35,15 @@ class RedirectText(object):
 
         # Use re.findall() to find all matches in the input string
         matches = re.findall(pattern, string)
+        self.text_widget.configure(state='normal')
         if matches:
-            # Deleting the last line to prevent the progress bar from being duplicated over and over... TODO : Find a way to print it smoothly...
-            self.text_widget.delete("end-2l", "end-1l")
-            self.text_widget.insert(tk.END, matches[-1] + '\n')
+            # self.text_widget.delete("end-2l", "end-1l")
+            self.text_widget.insert(tk.END, string + '\n')
         else:
             self.text_widget.insert(tk.END, string)
         self.text_widget.see(tk.END)
         self.text_widget.update_idletasks()  # Force update to ensure real-time display
+        self.text_widget.configure(state='disabled')
 
     def flush(self):
         pass
@@ -79,14 +80,14 @@ fields = [
 
 def transcribe_segment(segment, language):
     gc.collect()
+    model_file = "libs/models/small.pt"
     try:
-        if os.path.isfile("models/small.pt"):
-            print("Loading local model...")
-            model = whisper.load_model("models/small.pt")
+        if os.path.isfile(model_file):
+            model = whisper.load_model(model_file)
         else:
-            raise Exception("Model not found at 'models/small.pt'")
+            raise Exception(f"Model not found at '{model_file}'")
         # else:
-        #     print("Model not found in 'models/' folder. Trying to download/load it from cache.")
+        #     print("Model not found in 'libs/models/' folder. Trying to download/load it from cache.")
             # model = whisper.load_model("small") # try to download it
         result = whisper.transcribe(model, segment, language=language)
     except Exception as e:
@@ -101,6 +102,7 @@ def transcribe_from_file(file_path, output_folder="", language="french", segment
     print("Whisper starting...")
     transcription_segments = []
     for segment in segments:
+        print(f"Transcribing segment {len(transcription_segments)}")
         audio = whisper.load_audio(segment)
         transcription_pt = transcribe_segment(audio, language)
         if transcription_pt:
@@ -133,11 +135,9 @@ def run_program():
     }
 
     print("\n###########################################")
-    print(f"Starting transcription for '{params["file_path"]}' :")
-    print("\n###########################################")
     print("Settings : ")
     print(f"Selected language : {params["language"]}")
-    print(f"Audio file path : {params["file_path"]}")
+    print(f"Input file path : {params["file_path"]}")
     print(f"Audio segment length : {params["segment_length_s"]}s")
     print(f"Output folder : {params["output_folder"]}")
     print("###########################################")
@@ -156,7 +156,7 @@ def run_program():
         if extracted_text == None:
             messagebox.showinfo("Info", "Failed transcribing\n")
         else:
-            messagebox.showinfo("Info", "Done transcribing\n")
+            messagebox.showinfo("Info", f"Done transcribing, result saved at :\n'{params["output_folder"]}'\n")
     else:
         messagebox.showinfo("Info", "At least one input file couldn't be found\n")
         # Thread management
@@ -203,6 +203,7 @@ if __name__ == "__main__":
 
     console_text = tk.Text(console_frame, height=10)
     console_text.pack(fill="both", expand=True)
+    console_text.configure(state='disabled')
 
     # Redirect stdout to the Text widget
     sys.stdout = RedirectText(console_text)
