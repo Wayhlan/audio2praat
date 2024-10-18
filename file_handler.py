@@ -1,10 +1,6 @@
 import os
-import numpy as np
 import json
-from praatio import textgrid
 import inspect
-
-import utils
 
 def checkFilePaths(file_path):
     try:
@@ -49,7 +45,7 @@ def save_output_files(dest_folder, whisper_transcription, full_text):
         dest_folder = dest_folder + "/"
 
     transcript_path = dest_folder + "_whisper_transcription.json"
-    text_path = dest_folder + "_plain_text.txt"
+    text_path = dest_folder + "_text.txt"
 
     saved_files = []
     try:
